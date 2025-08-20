@@ -1,15 +1,21 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Shell
     x:Class="CountDownGame.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:CountDownGame"
-    Shell.FlyoutBehavior="Disabled"
-    Title="CountDownGame">
+    xmlns:local="clr-namespace:CountDownGame.Pages">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
-
+    <TabBar>
+        <ShellContent Title="Home"    Route="home"
+                      ContentTemplate="{DataTemplate local:HomePage}" />
+        <ShellContent Title="Game"    Route="game"
+                      ContentTemplate="{DataTemplate local:GamePage}" />
+        <ShellContent Title="History" Route="history"
+                      ContentTemplate="{DataTemplate local:HistoryPage}" />
+        <ShellContent Title="Settings" Route="settings"
+                      ContentTemplate="{DataTemplate local:SettingsPage}" />
+    </TabBar>
 </Shell>
+
+
+

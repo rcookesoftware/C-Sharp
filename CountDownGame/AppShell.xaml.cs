@@ -1,10 +1,13 @@
-﻿namespace CountDownGame
+﻿using Microsoft.Maui.Controls;
+
+namespace CountDownGame;
+
+public partial class AppShell : Shell
 {
-    public partial class AppShell : Shell
+    public AppShell()
     {
-        public AppShell()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }
+
+
