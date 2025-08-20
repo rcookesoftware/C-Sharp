@@ -5,18 +5,26 @@
              Title="Game">
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="14">
+
+            <!-- Title + round/timer -->
             <Label Text="Countdown — Game" FontSize="24" HorizontalOptions="Center" />
-
-            <!-- Player names -->
-            <Entry Placeholder="Player 1 Name" Text="{Binding Player1Name}" />
-            <Entry Placeholder="Player 2 Name" Text="{Binding Player2Name}" />
-
-            <!-- Round/clock display -->
             <Label Text="{Binding RoundDisplay}" FontAttributes="Bold" />
+            <Label Text="{Binding TimerDisplay}" FontSize="22" HorizontalOptions="Center" />
 
-            <!-- Letters tray -->
+            <!-- Players (names + scores) -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <VerticalStackLayout Grid.Column="0" Spacing="6">
+                    <Entry Placeholder="Player 1 Name" Text="{Binding Player1Name}" />
+                    <Label Text="{Binding Player1Score, StringFormat='Score: {0}'}" />
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1" Spacing="6">
+                    <Entry Placeholder="Player 2 Name" Text="{Binding Player2Name}" />
+                    <Label Text="{Binding Player2Score, StringFormat='Score: {0}'}" />
+                </VerticalStackLayout>
+            </Grid>
+
             <HorizontalStackLayout Spacing="8"
-                                   BindableLayout.ItemsSource="{Binding Letters}">
+                       BindableLayout.ItemsSource="{Binding Letters}">
                 <BindableLayout.ItemTemplate>
                     <DataTemplate>
                         <Frame Padding="10" HasShadow="True" CornerRadius="10">
@@ -25,17 +33,37 @@
                     </DataTemplate>
                 </BindableLayout.ItemTemplate>
             </HorizontalStackLayout>
-
             <Label Text="{Binding LettersCountDisplay}" />
 
-            <!-- Controls -->
+            <!-- Letter controls -->
             <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                <Button Grid.Column="0" Text="Consonant" Command="{Binding AddConsonantCommand}" />
-                <Button Grid.Column="1" Text="Vowel"     Command="{Binding AddVowelCommand}" />
+                <Button Grid.Column="0" Text="Consonant"
+                        Command="{Binding AddConsonantCommand}"
+                        IsEnabled="{Binding CanPickLetters}" />
+                <Button Grid.Column="1" Text="Vowel"
+                        Command="{Binding AddVowelCommand}"
+                        IsEnabled="{Binding CanPickLetters}" />
             </Grid>
-            <Button Text="Clear Letters" Command="{Binding ClearLettersCommand}" />
+            <Button Text="Clear Letters"
+                    Command="{Binding ClearLettersCommand}"
+                    IsEnabled="{Binding CanClearLetters}" />
+
+            <!-- Start round -->
+            <Button Text="Start 30s Round"
+                    Command="{Binding StartRoundCommand}"
+                    IsEnabled="{Binding StartEnabled}" />
+
+            <!-- Entry phase (after timer) -->
+            <VerticalStackLayout Spacing="10" IsVisible="{Binding IsEntryPhase}">
+                <Label Text="Time! Enter words:" FontAttributes="Bold" />
+                <Entry Placeholder="Player 1 word" Text="{Binding Player1WordInput}" />
+                <Entry Placeholder="Player 2 word" Text="{Binding Player2WordInput}" />
+                <Button Text="Score Round" Command="{Binding ScoreRoundCommand}" />
+            </VerticalStackLayout>
+
+            <!-- Status -->
+            <Label Text="{Binding StatusMessage}" />
+
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
-
-
