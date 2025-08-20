@@ -3,9 +3,48 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="CountDownGame.Pages.SettingsPage"
              Title="Settings">
-    <VerticalStackLayout Padding="24" Spacing="12">
-        <Label Text="Settings" FontSize="24" HorizontalOptions="Center" />
-        <Label Text="(Dark mode, font size, time limit… soon.)" />
-    </VerticalStackLayout>
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+            <Label Text="Appearance" FontSize="20" FontAttributes="Bold" />
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                <Label Text="Theme" VerticalOptions="Center" />
+                <Picker Grid.Column="1"
+                        SelectedItem="{Binding Theme}">
+                    <Picker.Items>
+                        <x:String>System</x:String>
+                        <x:String>Light</x:String>
+                        <x:String>Dark</x:String>
+                    </Picker.Items>
+                </Picker>
+            </Grid>
+
+            <BoxView HeightRequest="1" BackgroundColor="{DynamicResource Gray200}" />
+
+            <Label Text="Gameplay" FontSize="20" FontAttributes="Bold" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <Label Text="Rounds per game" VerticalOptions="Center" />
+                <Stepper Grid.Column="1"
+                         Minimum="4" Maximum="12" Increment="1"
+                         Value="{Binding MaxRounds}" />
+            </Grid>
+            <Label Text="{Binding MaxRounds, StringFormat='Current: {0} rounds'}" />
+
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <Label Text="Seconds per round" VerticalOptions="Center" />
+                <Stepper Grid.Column="1"
+                         Minimum="20" Maximum="60" Increment="5"
+                         Value="{Binding RoundSeconds}" />
+            </Grid>
+            <Label Text="{Binding RoundSeconds, StringFormat='Current: {0}s'}" />
+
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <Button Text="Reset to defaults" Command="{Binding ResetDefaultsCommand}" />
+                <Button Grid.Column="1" Text="Save" Command="{Binding SaveCommand}" />
+            </Grid>
+            <Label Text="Saved settings apply immediately for theme, and from the next round for timer/rounds." 
+                   FontAttributes="Italic" FontSize="12" />
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>
+
 
