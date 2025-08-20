@@ -64,7 +64,7 @@
 
 	<ItemGroup>
 	  <Folder Include="Data\" />
-	  <Folder Include="Services\" />
+	  <Folder Include="Resources\raw\dicts\" />
 	</ItemGroup>
 
 	<ItemGroup>

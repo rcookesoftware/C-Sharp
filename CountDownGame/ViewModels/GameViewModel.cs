@@ -8,6 +8,7 @@ using System.Collections.Specialized;
 using System.Windows.Input;
 using Microsoft.Maui.Dispatching;
 using CountDownGame.Models;
+using CountDownGame.Services;
 
 namespace CountDownGame.ViewModels;
 
@@ -16,23 +17,37 @@ public class GameViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     void Raise([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
+    // --- ctor / DI ---
+    private readonly DictionaryService _dictService;
+    public GameViewModel(DictionaryService? dictService = null)
+    {
+        _dictService = dictService ?? new DictionaryService();
+
+        AddVowelCommand = new Command(AddVowel);
+        AddConsonantCommand = new Command(AddConsonant);
+        ClearLettersCommand = new Command(ClearLetters);
+        StartRoundCommand = new Command(StartRound);
+        ScoreRoundCommand = new Command(ScoreRound);
+
+        Letters.CollectionChanged += OnLettersChanged;
+
+        ResetBags();
+        _ = LoadDictionaryAsync(); // fire-and-forget so we don't block UI
+    }
+
     // --- Players & settings ---
-    public Player Player1 { get; } = new() { Name = "" };
-    public Player Player2 { get; } = new() { Name = "" };
+    public Player Player1 { get; } = new();
+    public Player Player2 { get; } = new();
     public string Player1Name { get => Player1.Name; set { if (Player1.Name != value) { Player1.Name = value; Raise(); } } }
     public string Player2Name { get => Player2.Name; set { if (Player2.Name != value) { Player2.Name = value; Raise(); } } }
     public int Player1Score { get => Player1.Score; set { if (Player1.Score != value) { Player1.Score = value; Raise(); } } }
     public int Player2Score { get => Player2.Score; set { if (Player2.Score != value) { Player2.Score = value; Raise(); } } }
 
-    public GameSettings Settings { get; } = new(); // defaults: 6 rounds, 30s
+    public GameSettings Settings { get; } = new(); // 6 rounds, 30s default
 
     // --- Round state ---
     int _currentRound = 1;
-    public int CurrentRound
-    {
-        get => _currentRound;
-        set { if (_currentRound != value) { _currentRound = value; Raise(); Raise(nameof(RoundDisplay)); } }
-    }
+    public int CurrentRound { get => _currentRound; set { if (_currentRound != value) { _currentRound = value; Raise(); Raise(nameof(RoundDisplay)); } } }
     public string RoundDisplay => $"Round {CurrentRound} / {Settings.MaxRounds}";
 
     // --- Letters ---
@@ -46,32 +61,26 @@ public class GameViewModel : INotifyPropertyChanged
     public string TimerDisplay => IsRoundActive ? $"{TimeLeft}s" : (IsEntryPhase ? "Enter words" : "Ready");
 
     bool _isRoundActive;
-    public bool IsRoundActive
-    {
-        get => _isRoundActive;
-        private set { if (_isRoundActive != value) { _isRoundActive = value; Raise(); Raise(nameof(StartEnabled)); Raise(nameof(CanPickLetters)); Raise(nameof(CanClearLetters)); } }
-    }
+    public bool IsRoundActive { get => _isRoundActive; private set { if (_isRoundActive != value) { _isRoundActive = value; Raise(); Raise(nameof(StartEnabled)); Raise(nameof(CanPickLetters)); Raise(nameof(CanClearLetters)); } } }
 
     bool _isEntryPhase;
-    public bool IsEntryPhase
-    {
-        get => _isEntryPhase;
-        private set { if (_isEntryPhase != value) { _isEntryPhase = value; Raise(); Raise(nameof(StartEnabled)); Raise(nameof(CanPickLetters)); } }
-    }
+    public bool IsEntryPhase { get => _isEntryPhase; private set { if (_isEntryPhase != value) { _isEntryPhase = value; Raise(); Raise(nameof(StartEnabled)); Raise(nameof(CanPickLetters)); } } }
 
     public bool StartEnabled => Letters.Count == 9 && !IsRoundActive && !IsEntryPhase;
     public bool CanPickLetters => !IsRoundActive && !IsEntryPhase && Letters.Count < 9;
     public bool CanClearLetters => !IsRoundActive;
 
     // --- Word inputs & status ---
-    string _p1Word = string.Empty;
-    public string Player1WordInput { get => _p1Word; set { if (_p1Word != value) { _p1Word = value; Raise(); } } }
+    string _p1Word = string.Empty; public string Player1WordInput { get => _p1Word; set { if (_p1Word != value) { _p1Word = value; Raise(); } } }
+    string _p2Word = string.Empty; public string Player2WordInput { get => _p2Word; set { if (_p2Word != value) { _p2Word = value; Raise(); } } }
+    string _status = string.Empty; public string StatusMessage { get => _status; set { if (_status != value) { _status = value; Raise(); } } }
 
-    string _p2Word = string.Empty;
-    public string Player2WordInput { get => _p2Word; set { if (_p2Word != value) { _p2Word = value; Raise(); } } }
-
-    string _status = string.Empty;
-    public string StatusMessage { get => _status; set { if (_status != value) { _status = value; Raise(); } } }
+    // --- Dictionary state ---
+    HashSet<string>? _dictionary;
+    bool _dictReady;
+    public bool IsDictionaryReady { get => _dictReady; private set { if (_dictReady != value) { _dictReady = value; Raise(); } } }
+    string _dictStatus = "Loading dictionary…";
+    public string DictionaryStatus { get => _dictStatus; private set { if (_dictStatus != value) { _dictStatus = value; Raise(); } } }
 
     // --- History for later persistence ---
     public ObservableCollection<RoundResult> RoundHistory { get; } = new();
@@ -83,28 +92,28 @@ public class GameViewModel : INotifyPropertyChanged
     public ICommand StartRoundCommand { get; }
     public ICommand ScoreRoundCommand { get; }
 
-    // --- Real letter bags (from Step 4) ---
-    char[] _vowels = Array.Empty<char>();
-    int _vowelIndex = 0;
-    char[] _consonants = Array.Empty<char>();
-    int _consIndex = 0;
+    // --- Bags ---
+    char[] _vowels = Array.Empty<char>(); int _vowelIndex = 0;
+    char[] _consonants = Array.Empty<char>(); int _consIndex = 0;
 
-    readonly Random _rng = new();
-
-    public GameViewModel()
+    async System.Threading.Tasks.Task LoadDictionaryAsync()
     {
-        AddVowelCommand = new Command(AddVowel);
-        AddConsonantCommand = new Command(AddConsonant);
-        ClearLettersCommand = new Command(ClearLetters);
-        StartRoundCommand = new Command(StartRound);
-        ScoreRoundCommand = new Command(ScoreRound);
-
-        Letters.CollectionChanged += OnLettersChanged;
-
-        ResetBags(); // build + shuffle bags once at startup
+        try
+        {
+            DictionaryStatus = "Downloading dictionary (first run may take a moment)…";
+            _dictionary = await _dictService.LoadOrDownloadAsync();
+            IsDictionaryReady = true;
+            DictionaryStatus = $"Dictionary loaded ({_dictionary.Count:N0} words)";
+        }
+        catch (Exception ex)
+        {
+            // Fallback: still allow play, but warn that words won't be checked against dict
+            IsDictionaryReady = false;
+            DictionaryStatus = $"Dictionary unavailable — scoring by length only. ({ex.GetType().Name})";
+        }
     }
 
-    void OnLettersChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    void OnLettersChanged(object? s, NotifyCollectionChangedEventArgs e)
     {
         Raise(nameof(LettersCountDisplay));
         Raise(nameof(StartEnabled));
@@ -138,10 +147,8 @@ public class GameViewModel : INotifyPropertyChanged
     // ===== Letters =====
     void ResetBags()
     {
-        _vowels = BuildVowelBag();
-        _vowelIndex = 0;
-        _consonants = BuildConsonantBag();
-        _consIndex = 0;
+        _vowels = BuildVowelBag(); _vowelIndex = 0;
+        _consonants = BuildConsonantBag(); _consIndex = 0;
     }
 
     static char[] BuildVowelBag()
@@ -212,13 +219,11 @@ public class GameViewModel : INotifyPropertyChanged
     void StartRound()
     {
         if (!StartEnabled) return;
-
-        // Prepare phase
         IsEntryPhase = false;
         IsRoundActive = true;
         TimeLeft = Settings.RoundSeconds;
-        StatusMessage = "Round started — good luck!";
-
+        StatusMessage = IsDictionaryReady ? "Round started — good luck!"
+                                          : "Round started — dictionary still loading (scoring by length only).";
         EnsureTimer();
         _timer?.Stop();
         _timer?.Start();
@@ -228,43 +233,27 @@ public class GameViewModel : INotifyPropertyChanged
     {
         if (!IsEntryPhase) return;
 
-        // Normalize inputs
         string w1 = (Player1WordInput ?? string.Empty).Trim().ToUpperInvariant();
         string w2 = (Player2WordInput ?? string.Empty).Trim().ToUpperInvariant();
 
         bool w1LettersOk = UsesOnlyGivenLetters(w1, Letters);
         bool w2LettersOk = UsesOnlyGivenLetters(w2, Letters);
-
-        // TODO (Step 6): add dictionary check; for now assume any alphabetic string is potentially valid.
         bool w1Alpha = IsAlphabetic(w1);
         bool w2Alpha = IsAlphabetic(w2);
 
-        int len1 = (w1LettersOk && w1Alpha) ? w1.Length : 0;
-        int len2 = (w2LettersOk && w2Alpha) ? w2.Length : 0;
+        bool w1DictOk = !IsDictionaryReady || (_dictionary?.Contains(w1) == true);
+        bool w2DictOk = !IsDictionaryReady || (_dictionary?.Contains(w2) == true);
+
+        int len1 = (w1LettersOk && w1Alpha && w1DictOk) ? w1.Length : 0;
+        int len2 = (w2LettersOk && w2Alpha && w2DictOk) ? w2.Length : 0;
 
         int p1Pts = 0, p2Pts = 0;
-        if (len1 == 0 && len2 == 0)
-        {
-            // nobody scores
-        }
-        else if (len1 == len2)
-        {
-            p1Pts = len1;
-            p2Pts = len2;
-        }
-        else if (len1 > len2)
-        {
-            p1Pts = len1;
-        }
-        else
-        {
-            p2Pts = len2;
-        }
+        if (len1 == len2) { p1Pts = len1; p2Pts = len2; }
+        else if (len1 > len2) { p1Pts = len1; } else { p2Pts = len2; }
 
         Player1Score += p1Pts;
         Player2Score += p2Pts;
 
-        // Save round summary for history page later
         RoundHistory.Add(new RoundResult
         {
             Letters = Letters.ToList(),
@@ -274,10 +263,10 @@ public class GameViewModel : INotifyPropertyChanged
             Player2Points = p2Pts
         });
 
-        // Status text
         StatusMessage = $"Round {CurrentRound}: P1 '{w1}' (+{p1Pts}) vs P2 '{w2}' (+{p2Pts})";
+        if (IsDictionaryReady && (!w1DictOk || !w2DictOk))
+            StatusMessage += "  |  (Invalid word removed by dictionary)";
 
-        // Prepare next round
         CurrentRound++;
         IsEntryPhase = false;
         Player1WordInput = string.Empty;
@@ -289,11 +278,9 @@ public class GameViewModel : INotifyPropertyChanged
         {
             string p1Name = string.IsNullOrWhiteSpace(Player1Name) ? "Player 1" : Player1Name;
             string p2Name = string.IsNullOrWhiteSpace(Player2Name) ? "Player 2" : Player2Name;
-            string winner =
-                Player1Score == Player2Score ? "Draw!" :
-                (Player1Score > Player2Score ? $"{p1Name} wins!" : $"{p2Name} wins!");
+            string winner = Player1Score == Player2Score ? "Draw!"
+                             : (Player1Score > Player2Score ? $"{p1Name} wins!" : $"{p2Name} wins!");
             StatusMessage += $"  |  Game over — {winner}";
-            // (We’ll save to disk on the History page in a later step.)
         }
         else
         {
@@ -309,9 +296,7 @@ public class GameViewModel : INotifyPropertyChanged
 
         var avail = new int[26];
         foreach (var c in letters)
-        {
             if (c >= 'A' && c <= 'Z') avail[c - 'A']++;
-        }
 
         foreach (var c in word)
         {
