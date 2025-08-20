@@ -17,25 +17,29 @@ public class GameViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     void Raise([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-    // --- ctor / DI ---
+    // --- services ---
     private readonly DictionaryService _dictService;
-    public GameViewModel(DictionaryService? dictService = null)
+    private readonly GameStorageService _storage;
+
+    // ctor
+    public GameViewModel(DictionaryService? dictService = null, GameStorageService? storage = null)
     {
         _dictService = dictService ?? new DictionaryService();
+        _storage = storage ?? new GameStorageService();
 
         AddVowelCommand = new Command(AddVowel);
         AddConsonantCommand = new Command(AddConsonant);
         ClearLettersCommand = new Command(ClearLetters);
         StartRoundCommand = new Command(StartRound);
-        ScoreRoundCommand = new Command(ScoreRound);
+        ScoreRoundCommand = new Command(async () => await ScoreRoundAsync());
 
         Letters.CollectionChanged += OnLettersChanged;
 
         ResetBags();
-        _ = LoadDictionaryAsync(); // fire-and-forget so we don't block UI
+        _ = LoadDictionaryAsync(); // don’t block UI
     }
 
-    // --- Players & settings ---
+    // --- players & settings ---
     public Player Player1 { get; } = new();
     public Player Player2 { get; } = new();
     public string Player1Name { get => Player1.Name; set { if (Player1.Name != value) { Player1.Name = value; Raise(); } } }
@@ -43,18 +47,18 @@ public class GameViewModel : INotifyPropertyChanged
     public int Player1Score { get => Player1.Score; set { if (Player1.Score != value) { Player1.Score = value; Raise(); } } }
     public int Player2Score { get => Player2.Score; set { if (Player2.Score != value) { Player2.Score = value; Raise(); } } }
 
-    public GameSettings Settings { get; } = new(); // 6 rounds, 30s default
+    public GameSettings Settings { get; } = new(); // 6 rounds, 30s
 
-    // --- Round state ---
+    // --- round state ---
     int _currentRound = 1;
     public int CurrentRound { get => _currentRound; set { if (_currentRound != value) { _currentRound = value; Raise(); Raise(nameof(RoundDisplay)); } } }
     public string RoundDisplay => $"Round {CurrentRound} / {Settings.MaxRounds}";
 
-    // --- Letters ---
+    // --- letters ---
     public ObservableCollection<char> Letters { get; } = new();
     public string LettersCountDisplay => $"{Letters.Count} / 9 letters";
 
-    // --- Timer & phases ---
+    // --- timer/phases ---
     IDispatcherTimer? _timer;
     int _timeLeft;
     public int TimeLeft { get => _timeLeft; private set { _timeLeft = value; Raise(); Raise(nameof(TimerDisplay)); } }
@@ -70,29 +74,26 @@ public class GameViewModel : INotifyPropertyChanged
     public bool CanPickLetters => !IsRoundActive && !IsEntryPhase && Letters.Count < 9;
     public bool CanClearLetters => !IsRoundActive;
 
-    // --- Word inputs & status ---
+    // --- words/status/dict ---
     string _p1Word = string.Empty; public string Player1WordInput { get => _p1Word; set { if (_p1Word != value) { _p1Word = value; Raise(); } } }
     string _p2Word = string.Empty; public string Player2WordInput { get => _p2Word; set { if (_p2Word != value) { _p2Word = value; Raise(); } } }
     string _status = string.Empty; public string StatusMessage { get => _status; set { if (_status != value) { _status = value; Raise(); } } }
-
-    // --- Dictionary state ---
-    HashSet<string>? _dictionary;
-    bool _dictReady;
+    HashSet<string>? _dictionary; bool _dictReady;
     public bool IsDictionaryReady { get => _dictReady; private set { if (_dictReady != value) { _dictReady = value; Raise(); } } }
     string _dictStatus = "Loading dictionary…";
     public string DictionaryStatus { get => _dictStatus; private set { if (_dictStatus != value) { _dictStatus = value; Raise(); } } }
 
-    // --- History for later persistence ---
+    // --- history (rounds for this game) ---
     public ObservableCollection<RoundResult> RoundHistory { get; } = new();
 
-    // --- Commands ---
+    // --- commands ---
     public ICommand AddVowelCommand { get; }
     public ICommand AddConsonantCommand { get; }
     public ICommand ClearLettersCommand { get; }
     public ICommand StartRoundCommand { get; }
     public ICommand ScoreRoundCommand { get; }
 
-    // --- Bags ---
+    // --- bags ---
     char[] _vowels = Array.Empty<char>(); int _vowelIndex = 0;
     char[] _consonants = Array.Empty<char>(); int _consIndex = 0;
 
@@ -107,7 +108,6 @@ public class GameViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            // Fallback: still allow play, but warn that words won't be checked against dict
             IsDictionaryReady = false;
             DictionaryStatus = $"Dictionary unavailable — scoring by length only. ({ex.GetType().Name})";
         }
@@ -229,7 +229,7 @@ public class GameViewModel : INotifyPropertyChanged
         _timer?.Start();
     }
 
-    void ScoreRound()
+    async System.Threading.Tasks.Task ScoreRoundAsync()
     {
         if (!IsEntryPhase) return;
 
@@ -281,6 +281,19 @@ public class GameViewModel : INotifyPropertyChanged
             string winner = Player1Score == Player2Score ? "Draw!"
                              : (Player1Score > Player2Score ? $"{p1Name} wins!" : $"{p2Name} wins!");
             StatusMessage += $"  |  Game over — {winner}";
+
+            // SAVE the finished game
+            var result = new GameResult
+            {
+                PlayedAt = DateTime.Now,
+                Player1Name = p1Name,
+                Player1Score = Player1Score,
+                Player2Name = p2Name,
+                Player2Score = Player2Score,
+                Rounds = RoundHistory.ToList()
+            };
+            try { await _storage.AddAsync(result); }
+            catch { /* ignore save errors for now; could show a toast */ }
         }
         else
         {

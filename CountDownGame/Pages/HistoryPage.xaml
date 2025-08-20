@@ -3,9 +3,40 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="CountDownGame.Pages.HistoryPage"
              Title="History">
-    <VerticalStackLayout Padding="24" Spacing="12">
-        <Label Text="Game History" FontSize="24" HorizontalOptions="Center" />
-        <Label Text="(We’ll bind a saved list here.)" />
+    <VerticalStackLayout Padding="16" Spacing="12">
+
+        <Grid ColumnDefinitions="*,Auto" VerticalOptions="Center">
+            <Label Text="Saved Games" FontSize="24" FontAttributes="Bold" />
+            <Button Grid.Column="1" Text="Clear"
+                    Command="{Binding ClearCommand}" />
+        </Grid>
+
+        <CollectionView ItemsSource="{Binding Games}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame Padding="12" Margin="0,6" HasShadow="True" CornerRadius="10">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="{Binding PlayedAt, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"
+                                   FontAttributes="Bold" />
+                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                <Label Text="{Binding Player1Name}" />
+                                <Label Grid.Column="1" Text="vs" />
+                                <Label Grid.Column="2" Text="{Binding Player2Name}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                                <Label Text="{Binding Player1Score, StringFormat='P1: {0}'}" />
+                                <Label Grid.Column="1" />
+                                <Label Grid.Column="2" Text="{Binding Player2Score, StringFormat='P2: {0}'}"
+                                       HorizontalOptions="End" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Button Text="Refresh" Command="{Binding RefreshCommand}" />
     </VerticalStackLayout>
 </ContentPage>
+
 
