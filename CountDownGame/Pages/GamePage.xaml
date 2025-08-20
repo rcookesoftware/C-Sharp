@@ -6,12 +6,28 @@
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="14">
 
-            <!-- Title + round/timer -->
+            <!-- Title -->
             <Label Text="Countdown — Game" FontSize="24" HorizontalOptions="Center" />
+
+            <!-- Dictionary status -->
+            <Label Text="{Binding DictionaryStatus}" FontAttributes="Italic" />
+
+            <!-- Who picks letters this round -->
+            <Label Text="{Binding PickerDisplay}" FontAttributes="Italic" />
+
+            <!-- Round + timer -->
             <Label Text="{Binding RoundDisplay}" FontAttributes="Bold" />
             <Label Text="{Binding TimerDisplay}" FontSize="22" HorizontalOptions="Center" />
 
-            <!-- Players (names + scores) -->
+            <!-- Healthbar-style timer (drains from full → empty, green) -->
+            <Frame Padding="0" HeightRequest="14" CornerRadius="7"
+                   BackgroundColor="#32CD32" HasShadow="False">
+                <ProgressBar Progress="{Binding TimerProgress}"
+                             ProgressColor="LimeGreen"
+                             Margin="0" HeightRequest="14" />
+            </Frame>
+
+            <!-- Players -->
             <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                 <VerticalStackLayout Grid.Column="0" Spacing="6">
                     <Entry Placeholder="Player 1 Name" Text="{Binding Player1Name}" />
@@ -23,12 +39,13 @@
                 </VerticalStackLayout>
             </Grid>
 
+            <!-- Letters tray -->
             <HorizontalStackLayout Spacing="8"
-                       BindableLayout.ItemsSource="{Binding Letters}">
+                                   BindableLayout.ItemsSource="{Binding Letters}">
                 <BindableLayout.ItemTemplate>
                     <DataTemplate>
                         <Frame Padding="10" HasShadow="True" CornerRadius="10">
-                            <Label Text="{Binding .}" FontSize="24" HorizontalOptions="Center" />
+                            <Label Text="{Binding .}" FontSize="24" HorizontalOptions="Center"/>
                         </Frame>
                     </DataTemplate>
                 </BindableLayout.ItemTemplate>
@@ -49,7 +66,7 @@
                     IsEnabled="{Binding CanClearLetters}" />
 
             <!-- Start round -->
-            <Button Text="Start 30s Round"
+            <Button Text="Start Round"
                     Command="{Binding StartRoundCommand}"
                     IsEnabled="{Binding StartEnabled}" />
 
@@ -58,7 +75,9 @@
                 <Label Text="Time! Enter words:" FontAttributes="Bold" />
                 <Entry Placeholder="Player 1 word" Text="{Binding Player1WordInput}" />
                 <Entry Placeholder="Player 2 word" Text="{Binding Player2WordInput}" />
-                <Button Text="Score Round" Command="{Binding ScoreRoundCommand}" />
+                <Button Text="Score Round"
+                        Command="{Binding ScoreRoundCommand}"
+                        IsEnabled="{Binding CanScore}" />
             </VerticalStackLayout>
 
             <!-- Status -->

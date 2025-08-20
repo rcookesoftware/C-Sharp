@@ -9,11 +9,13 @@ public partial class HomePage : ContentPage
         InitializeComponent();
     }
 
-    private async void OnStartGameClicked(object sender, EventArgs e)
+    private async void OnStartGameTapped(object? sender, TappedEventArgs e)
         => await Shell.Current.GoToAsync("//game");
 
-    private async void OnViewHistoryClicked(object sender, EventArgs e)
+    private async void OnViewHistoryTapped(object? sender, TappedEventArgs e)
         => await Shell.Current.GoToAsync("//history");
-}
 
+    private async void OnSettingsTapped(object? sender, TappedEventArgs e)
+        => await Shell.Current.GoToAsync("//settings");
+}
 

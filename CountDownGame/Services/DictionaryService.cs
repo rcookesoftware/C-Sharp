@@ -9,18 +9,13 @@ namespace CountDownGame.Services;
 
 public class DictionaryService
 {
-    // URL from the brief (large word list)
+    // URL
     private const string DictionaryUrl =
         "https://raw.githubusercontent.com/DonH-ITS/jsonfiles/main/cdwords.txt";
 
-    // Where we’ll cache it
     private static readonly string LocalPath =
         Path.Combine(FileSystem.AppDataDirectory, "cdwords.txt");
 
-    /// <summary>
-    /// Loads the dictionary from local cache if present; otherwise downloads and caches it.
-    /// Returns uppercase words for fast lookups.
-    /// </summary>
     public async Task<HashSet<string>> LoadOrDownloadAsync(CancellationToken ct = default)
     {
         if (!File.Exists(LocalPath) || new FileInfo(LocalPath).Length == 0)

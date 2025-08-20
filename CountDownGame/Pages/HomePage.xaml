@@ -3,11 +3,62 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="CountDownGame.Pages.HomePage"
              Title="Home">
-    <VerticalStackLayout Padding="24" Spacing="16">
-        <Label Text="Countdown — Word Game" FontSize="28" HorizontalOptions="Center" />
-        <Button Text="Start Game" Clicked="OnStartGameClicked" />
-        <Button Text="View History" Clicked="OnViewHistoryClicked" />
-    </VerticalStackLayout>
+
+    <ContentPage.Resources>
+        <Style TargetType="Frame" x:Key="CardButton">
+            <Setter Property="CornerRadius" Value="20" />
+            <Setter Property="HasShadow" Value="True" />
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="BackgroundColor" Value="#2B6CB0" />
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="20">
+            <Label Text="Countdown" FontSize="32" FontAttributes="Bold" HorizontalOptions="Center" />
+            <Label Text="Two players • Longest valid word wins" HorizontalOptions="Center" Opacity="0.8" />
+
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="16" RowSpacing="16">
+
+                <Frame Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource CardButton}">
+                    <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                        <Label Text="🎮" FontSize="44" HorizontalTextAlignment="Center" />
+                        <Label Text="Start Game" FontSize="18" HorizontalTextAlignment="Center" TextColor="White" />
+                    </VerticalStackLayout>
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnStartGameTapped" />
+                    </Frame.GestureRecognizers>
+                </Frame>
+
+                <Frame Grid.Row="1" Grid.Column="0" Style="{StaticResource CardButton}" BackgroundColor="#38A169">
+                    <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                        <Label Text="📜" FontSize="40" HorizontalTextAlignment="Center" />
+                        <Label Text="History" HorizontalTextAlignment="Center" TextColor="White" />
+                    </VerticalStackLayout>
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnViewHistoryTapped" />
+                    </Frame.GestureRecognizers>
+                </Frame>
+
+                <Frame Grid.Row="1" Grid.Column="1" Style="{StaticResource CardButton}" BackgroundColor="#DD6B20">
+                    <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                        <Label Text="⚙️" FontSize="40" HorizontalTextAlignment="Center" />
+                        <Label Text="Settings" HorizontalTextAlignment="Center" TextColor="White" />
+                    </VerticalStackLayout>
+                    <Frame.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnSettingsTapped" />
+                    </Frame.GestureRecognizers>
+                </Frame>
+
+            </Grid>
+
+            <Frame CornerRadius="16" Padding="14" HasShadow="True">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Tips" FontAttributes="Bold" />
+                    <Label Text="• Set rounds &amp; time in Settings" />
+                    <Label Text="• After the timer, enter both words, then Score" />
+                </VerticalStackLayout>
+            </Frame>
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>
-
-

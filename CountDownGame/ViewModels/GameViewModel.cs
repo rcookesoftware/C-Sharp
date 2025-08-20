@@ -385,7 +385,7 @@ public class GameViewModel : INotifyPropertyChanged
                 Rounds = RoundHistory.ToList()
             };
             try { await _storage.AddAsync(result); }
-            catch { /* ignore save errors for now */ }
+            catch { }
         }
         else
         {
