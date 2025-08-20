@@ -3,9 +3,39 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="CountDownGame.Pages.GamePage"
              Title="Game">
-    <VerticalStackLayout Padding="24" Spacing="12">
-        <Label Text="Game" FontSize="24" HorizontalOptions="Center" />
-        <Label Text="(Letters + timer coming next.)" />
-    </VerticalStackLayout>
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="14">
+            <Label Text="Countdown — Game" FontSize="24" HorizontalOptions="Center" />
+
+            <!-- Player names -->
+            <Entry Placeholder="Player 1 Name" Text="{Binding Player1Name}" />
+            <Entry Placeholder="Player 2 Name" Text="{Binding Player2Name}" />
+
+            <!-- Round/clock display -->
+            <Label Text="{Binding RoundDisplay}" FontAttributes="Bold" />
+
+            <!-- Letters tray -->
+            <HorizontalStackLayout Spacing="8"
+                                   BindableLayout.ItemsSource="{Binding Letters}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Frame Padding="10" HasShadow="True" CornerRadius="10">
+                            <Label Text="{Binding .}" FontSize="24" HorizontalOptions="Center" />
+                        </Frame>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </HorizontalStackLayout>
+
+            <Label Text="{Binding LettersCountDisplay}" />
+
+            <!-- Controls -->
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Button Grid.Column="0" Text="Consonant" Command="{Binding AddConsonantCommand}" />
+                <Button Grid.Column="1" Text="Vowel"     Command="{Binding AddVowelCommand}" />
+            </Grid>
+            <Button Text="Clear Letters" Command="{Binding ClearLettersCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>
+
 
