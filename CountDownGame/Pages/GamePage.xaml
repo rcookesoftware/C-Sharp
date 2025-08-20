@@ -29,7 +29,7 @@
 
             <!-- Players -->
             <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                <VerticalStackLayout Grid.Column="0" Spacing="6">
+                <VerticalStackLayout Grid.Column="0" Spacing="3">
                     <Entry Placeholder="Player 1 Name" Text="{Binding Player1Name}" />
                     <Label Text="{Binding Player1Score, StringFormat='Score: {0}'}" />
                 </VerticalStackLayout>
